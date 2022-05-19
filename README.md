@@ -1,1 +1,3 @@
 # Stockecc
+
+image.png
