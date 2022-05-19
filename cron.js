@@ -18,11 +18,12 @@ connection.connect(function (err) {
     console.log('Connected to the MySQL server.');
 });
 
+const filename = "STOCK-EEC-17052022.xlsx";
+
 // Schedule tasks to be run on the server.
 CRON.schedule('* * * * *', function () {
-    console.log('running a task every minute');
+    console.log('running  task every minute, check README.md for cron config');
     var workbook = new EXCEL.Workbook();
-    const filename = "STOCK-EEC-17052022.xlsx";
     workbook.xlsx.readFile(filename)
         .then(function () {
             workbook.eachSheet((ws, sheetId) => {
