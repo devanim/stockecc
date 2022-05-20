@@ -4,7 +4,7 @@ const MOMENT = require('moment');
 var MSSQL = require('mssql');
 const SqlString = require('tsqlstring');
 
-/** MySQL connection details */
+/** MSSQL connection details */
 var config = {
     "user": 'sa',
     "password": 'Ericsson10UK!',
