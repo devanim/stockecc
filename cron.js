@@ -1,7 +1,6 @@
-const Config = require('./config-dev.js');
-//const Config = require('./config-prod.js');
+//const Config = require('./config-dev.js');
+const Config = require('./config-prod.js');
 
-const Cron = require('node-cron');
 const Excel = require('exceljs');
 const MSSql = require('mssql');
 const SqlString = require('tsqlstring');
@@ -9,11 +8,12 @@ const Path = require('path');
 const Fs = require('fs');
 const Moment = require('moment')
 
-const EXTENSION = '.xlsx';
-const FILE_AGE = 150; //1800;
+const FILE_EXTENSION = '.xlsx';
+const FILE_AGE = 1800;
+const FILE_PATH = '/home/euroestcar/public_html/new.euroestcar.ro/ftp_products_stock/';
 
 /** file to be parsed & loaded */
-Fs.readdir('.', function (err, files) {
+Fs.readdir(FILE_PATH, function (err, files) {
 
     if (err) {
         return console.log('[INFO] Unable to scan directory: ' + err);
@@ -21,7 +21,7 @@ Fs.readdir('.', function (err, files) {
 
     files.filter(file => {
 
-        if (Path.extname(file).toLowerCase() === EXTENSION) {
+        if (Path.extname(file).toLowerCase() === FILE_EXTENSION) {
             console.log('[INFO] File name: ' + file);
 
             if (file) {
@@ -40,53 +40,49 @@ Fs.readdir('.', function (err, files) {
                         console.log('[INFO] Fisierul a fost uploadat acum mai mult de ' + FILE_AGE + ' de milisecunde');
 
                         /** Schedule tasks to be run on the server. */
-                        Cron.schedule('0 * * * *', function () { // hourly
-                            (async () => {
-                                try {
-                                    let pool = await MSSql.connect(Config);
-                                    console.log('[INFO] Running  task every minute, check README.md for cron config');
+                        (async () => {
+                            try {
+                                let pool = await MSSql.connect(Config);
+                                console.log('[INFO] Running  task every minute, check README.md for cron config');
 
-                                    var workbook = new Excel.Workbook();
-                                    workbook.xlsx.readFile(file)
-                                        .then(function () {
-                                            console.log('[INFO] Truncating stockecc table');
-                                            pool.request().query("TRUNCATE TABLE [dbo].[stockecc]", function (err, result) {
-                                                if (err) throw err;
-                                                console.log('[INFO] Success');
-                                            });
-
-                                            // query to the database and get the records
-                                            workbook.eachSheet((ws, sheetId) => {
-                                                var worksheet = workbook.getWorksheet(sheetId);
-                                                worksheet.eachRow({ includeEmpty: false }, function (row, rowNumber) {
-                                                    if (rowNumber > 1) {
-                                                        /** add extra columns here */
-                                                        const rowWithExtra = row.values;
-                                                        rowWithExtra.push(stats.ctime);
-                                                        rowWithExtra.push(worksheet.name);
-
-                                                        /** indexing in xlsx files starts from number 1 (eg. A1 point to row 1 and column 1) */
-                                                        /** setting null at the start is much easier than always recalculating from 0 based to 1 based indexing */
-                                                        rowWithExtra.shift();
-                                                        pool.request()
-                                                            .query(SqlString.format("INSERT INTO [dbo].[stockecc] ([Reference],[Description],[Brand],[Stock],[Price],[CreatedDate],[BrandShort]) VALUES (?, ?, ?, ?, ?, ?, ?)", rowWithExtra), function (err, result) {
-                                                                if (err) throw err;
-                                                            });
-                                                    }
-                                                });
-                                            })
+                                var workbook = new Excel.Workbook();
+                                workbook.xlsx.readFile(file)
+                                    .then(function () {
+                                        console.log('[INFO] Truncating stockecc table');
+                                        pool.request().query("TRUNCATE TABLE [dbo].[stockecc]", function (err, result) {
+                                            if (err) throw err;
+                                            console.log('[INFO] Success');
                                         });
-                                } catch (err) {
-                                    console.log(err);
-                                    console.dir(err);
-                                }
-                            })()
-                        });
+
+                                        // query to the database and get the records
+                                        workbook.eachSheet((ws, sheetId) => {
+                                            var worksheet = workbook.getWorksheet(sheetId);
+                                            worksheet.eachRow({ includeEmpty: false }, function (row, rowNumber) {
+                                                if (rowNumber > 1) {
+                                                    /** add extra columns here */
+                                                    const rowWithExtra = row.values;
+                                                    rowWithExtra.push(stats.ctime);
+                                                    rowWithExtra.push(worksheet.name);
+
+                                                    /** indexing in xlsx files starts from number 1 (eg. A1 point to row 1 and column 1) */
+                                                    /** setting null at the start is much easier than always recalculating from 0 based to 1 based indexing */
+                                                    rowWithExtra.shift();
+                                                    pool.request()
+                                                        .query(SqlString.format("INSERT INTO [dbo].[stockecc] ([Reference],[Description],[Brand],[Stock],[Price],[CreatedDate],[BrandShort]) VALUES (?, ?, ?, ?, ?, ?, ?)", rowWithExtra), function (err, result) {
+                                                            if (err) throw err;
+                                                        });
+                                                }
+                                            });
+                                        })
+                                    });
+                            } catch (err) {
+                                console.log(err);
+                                console.dir(err);
+                            }
+                        })()
                     }
                 })
             }
         }
     });
-
 });
-
