@@ -14,8 +14,9 @@ var databaseOptions = {
     "pool": {
         max: 500,
         min: 0,
-        idleTimeoutMillis: 30000
+        idleTimeoutMillis: 500000
     },
+    'connectionTimeout': 500000,
 };
 
 module.exports = databaseOptions;
