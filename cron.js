@@ -1,72 +1,92 @@
-const CRON = require('node-cron');
-const EXCEL = require('exceljs');
-const MOMENT = require('moment');
-var MSSQL = require('mssql');
-const SqlString = require('tsqlstring');
+const Config = require('./config-dev.js');
+//const Config = require('./config-prod.js');
 
-/** MSSQL connection details */
-var config = {
-    "user": 'sa',
-    "password": 'Ericsson10UK!',
-    "server": 'localhost',
-    "database": 'stocks',
-    "dialect": "mssql",
-    'connectionTimeout': 50000,
-    "options": {
-        trustedconnection: true,
-        enableArithAbort: true,
-        encrypt: false,
-        useUTC: true,
-        instancename: 'MSSQLSERVER'  // SQL Server instance name
-    },
-};
+const Cron = require('node-cron');
+const Excel = require('exceljs');
+const MSSql = require('mssql');
+const SqlString = require('tsqlstring');
+const Path = require('path');
+const Fs = require('fs');
+const Moment = require('moment')
+
+const EXTENSION = '.xlsx';
+const FILE_AGE = 150; //1800;
 
 /** file to be parsed & loaded */
-const filename = "STOCK-EEC-17052022.xlsx";
+Fs.readdir('.', function (err, files) {
 
-/** Schedule tasks to be run on the server. */
-CRON.schedule('* * * * *', function () {
-    (async () => {
-        try {
-            // connect to your database
-            let pool = await MSSQL.connect(config);
-            // create Request object
-            const request = pool.request();
-            // query to the database and get the records
-            console.log('running  task every minute, check README.md for cron config');
-            var workbook = new EXCEL.Workbook();
-            workbook.xlsx.readFile(filename)
-                .then(function () {
-                    workbook.eachSheet((ws, sheetId) => {
-                        var worksheet = workbook.getWorksheet(sheetId);
-                        worksheet.eachRow({ includeEmpty: false }, function (row, rowNumber) {
-                            if (rowNumber > 1) {
-                                /** add extra columns here */
-                                const rowWithExtra = row.values;
-                                rowWithExtra.push(MOMENT(new Date()).format('YYYY-MM-DD HH:mm:ss'));
-                                rowWithExtra.push(worksheet.name);
+    if (err) {
+        return console.log('[INFO] Unable to scan directory: ' + err);
+    }
 
-                                /** indexing in xlsx files starts from number 1 (eg. A1 point to row 1 and column 1) */
-                                /** setting null at the start is much easier than always recalculating from 0 based to 1 based indexing */
-                                rowWithExtra.shift();
+    files.filter(file => {
 
-                                /** prepare SQL to insert */
-                                var sql = SqlString.format("INSERT INTO [dbo].[stockecc] ([Reference],[Description],[Brand],[Stock],[Price],[CreatedDate],[BrandShort]) VALUES (?, ?, ?, ?, ?, ?, ?)", rowWithExtra);
+        if (Path.extname(file).toLowerCase() === EXTENSION) {
+            console.log('[INFO] File name: ' + file);
 
-                                /** insert row */
-                                request.query(sql, function (err, result) {
-                                    if (err) throw err;
-                                    console.log(result.rowsAffected);
-                                });
-                            }
+            if (file) {
+                //fetch file details
+                Fs.stat(file, (err, stats) => {
+                    if (err) {
+                        throw err;
+                    }
+                    //console.log(`File Data Last Modified: ${stats.mtime}`);
+                    console.log(`[INFO] File Status Last Modified: ${stats.ctime}`);
+
+                    if (Moment(Moment().diff(stats.ctime, 'seconds')) < FILE_AGE) {
+                        err = '[INFO] Fisierul a fost uploadat acum mai putin de ' + FILE_AGE + ' de milisecunde';
+                        throw err;
+                    } else {
+                        console.log('[INFO] Fisierul a fost uploadat acum mai mult de ' + FILE_AGE + ' de milisecunde');
+
+                        /** Schedule tasks to be run on the server. */
+                        Cron.schedule('0 * * * *', function () { // hourly
+                            (async () => {
+                                try {
+                                    let pool = await MSSql.connect(Config);
+                                    console.log('[INFO] Running  task every minute, check README.md for cron config');
+
+                                    var workbook = new Excel.Workbook();
+                                    workbook.xlsx.readFile(file)
+                                        .then(function () {
+                                            console.log('[INFO] Truncating stockecc table');
+                                            pool.request().query("TRUNCATE TABLE [dbo].[stockecc]", function (err, result) {
+                                                if (err) throw err;
+                                                console.log('[INFO] Success');
+                                            });
+
+                                            // query to the database and get the records
+                                            workbook.eachSheet((ws, sheetId) => {
+                                                var worksheet = workbook.getWorksheet(sheetId);
+                                                worksheet.eachRow({ includeEmpty: false }, function (row, rowNumber) {
+                                                    if (rowNumber > 1) {
+                                                        /** add extra columns here */
+                                                        const rowWithExtra = row.values;
+                                                        rowWithExtra.push(stats.ctime);
+                                                        rowWithExtra.push(worksheet.name);
+
+                                                        /** indexing in xlsx files starts from number 1 (eg. A1 point to row 1 and column 1) */
+                                                        /** setting null at the start is much easier than always recalculating from 0 based to 1 based indexing */
+                                                        rowWithExtra.shift();
+                                                        pool.request()
+                                                            .query(SqlString.format("INSERT INTO [dbo].[stockecc] ([Reference],[Description],[Brand],[Stock],[Price],[CreatedDate],[BrandShort]) VALUES (?, ?, ?, ?, ?, ?, ?)", rowWithExtra), function (err, result) {
+                                                                if (err) throw err;
+                                                            });
+                                                    }
+                                                });
+                                            })
+                                        });
+                                } catch (err) {
+                                    console.log(err);
+                                    console.dir(err);
+                                }
+                            })()
                         });
-                        console.log("Done sheet " + worksheet.name);
-                    })
-                });
-        } catch (err) {
-            // ... error checks
-            console.log(err);
-            console.dir(err);
+                    }
+                })
+            }
         }
-    })()
+    });
+
 });
+
