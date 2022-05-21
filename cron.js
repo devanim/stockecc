@@ -26,7 +26,7 @@ Fs.readdir(FILE_PATH, function (err, files) {
 
             if (file) {
                 //fetch file details
-                Fs.stat(file, (err, stats) => {
+                Fs.stat(FILE_PATH + file, (err, stats) => {
                     if (err) {
                         throw err;
                     }
@@ -46,7 +46,7 @@ Fs.readdir(FILE_PATH, function (err, files) {
                                 console.log('[INFO] Running  task every minute, check README.md for cron config');
 
                                 var workbook = new Excel.Workbook();
-                                workbook.xlsx.readFile(file)
+                                workbook.xlsx.readFile(FILE_PATH + file)
                                     .then(function () {
                                         console.log('[INFO] Truncating stockecc table');
                                         pool.request().query("TRUNCATE TABLE [dbo].[stockecc]", function (err, result) {
