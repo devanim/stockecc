@@ -1,4 +1,4 @@
-var databaseOptions = {
+var Config = {
     "user": 'sa',
     "password": 'Ericsson10UK!',
     "server": 'localhost',
@@ -11,11 +11,6 @@ var databaseOptions = {
         encrypt: false,
         instancename: 'MSSQLSERVER'  // SQL Server instance name
     },
-    "pool": {
-        max: 10,
-        min: 1,
-        idleTimeoutMillis: 30000
-    }
 };
 
-module.exports = databaseOptions;
+export default Config;
