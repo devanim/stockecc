@@ -1,11 +1,10 @@
 import pkg from 'mssql';
 const { Table, VarChar, Decimal, Float, Int, DateTime } = pkg
 // import Config from './config-dev.js';
-const Config = require('./config-prod.js');
+import Config from './config-prod.js';
 
 import Excel from 'exceljs';
 import Conn from 'mssql';
-import SqlString from 'tsqlstring';
 import Path from 'path';
 import Fs from 'fs';
 import Moment from 'moment';
