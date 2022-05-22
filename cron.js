@@ -67,7 +67,7 @@ Fs.readdir(FILE_PATH, function (err, files) {
                                                             table.columns.add(cols[i]['COLUMN_NAME'], DateTime, { nullable: false });
                                                             break;
                                                         case 'nvarchar':
-                                                            table.columns.add(cols[i]['COLUMN_NAME'], VarChar(cols[i]['CHARACTER_MAXIMUM_LENGTH']), { nullable: false });
+                                                            table.columns.add(cols[i]['COLUMN_NAME'], VarChar(cols[i]['CHARACTER_MAXIMUM_LENGTH']), { nullable: true });
                                                             break;
                                                         case 'money':
                                                         case 'decimal':
