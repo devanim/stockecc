@@ -8,4 +8,5 @@
 - place an **xlsx** file in the current working directory
 - uncomment
   > // import Config from './config-dev.js';
+- uncomment
   > // const FILE_PATH = './';
