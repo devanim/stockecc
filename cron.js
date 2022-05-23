@@ -1,4 +1,5 @@
 import pkg from 'mssql';
+
 const { Table, VarChar, Decimal, Float, Int, DateTime } = pkg
 // import Config from './config-dev.js';
 import Config from './config-prod.js';
@@ -93,12 +94,23 @@ Fs.readdir(FILE_PATH, function (err, files) {
                                                     if (rowNumber > 1) {
                                                         /** add extra columns here */
                                                         const rowWithExtra = row.values;
+                                                        //console.log(typeof (rowWithExtra[0]) + ', ' + typeof (rowWithExtra[1]) + ', ' + typeof (rowWithExtra[2]) + ', ' + typeof (rowWithExtra[3]) + ', ' + typeof (rowWithExtra[4]) + ', ' + typeof (rowWithExtra[5]));
                                                         rowWithExtra.push(stats.ctime);
                                                         rowWithExtra.push(worksheet.name);
 
                                                         /** indexing in xlsx files starts from number 1 (eg. A1 point to row 1 and column 1) */
                                                         /** setting null at the start is much easier than always recalculating from 0 based to 1 based indexing */
                                                         rowWithExtra.shift();
+
+                                                        if (typeof (rowWithExtra[4]) !== 'number') {
+                                                            // console.log(typeof (rowWithExtra[4]));
+                                                            rowWithExtra[4] = 0;
+                                                        }
+                                                        if (typeof (rowWithExtra[3]) !== 'number') {
+                                                            // console.log(typeof (rowWithExtra[3]));
+                                                            rowWithExtra[3] = 0;
+                                                        }
+
                                                         table.rows.add.apply(table.rows, rowWithExtra);
                                                     }
                                                 });
