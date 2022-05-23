@@ -25,12 +25,11 @@ Fs.readdir(FILE_PATH, function (err, files) {
         if (Path.extname(file).toLowerCase() === FILE_EXTENSION) {
             console.log(new Date().toLocaleString().replace(/T/, ' ').replace(/\..+/, '') + ' | File name: ' + file);
             if (file) {
-                //fetch file details
+                /** fetch file details */
                 Fs.stat(FILE_PATH + file, (err, stats) => {
                     if (err) {
                         throw err;
                     }
-                    //console.log(`File Data Last Modified: ${stats.mtime}`);
                     console.log(new Date().toLocaleString().replace(/T/, ' ').replace(/\..+/, '') + ' | File  last modified: ' + stats.ctime);
 
                     if (Moment(Moment().diff(stats.ctime, 'seconds')) < FILE_AGE) {
@@ -39,7 +38,6 @@ Fs.readdir(FILE_PATH, function (err, files) {
                     } else {
                         console.log(new Date().toLocaleString().replace(/T/, ' ').replace(/\..+/, '') + ' | Fisierul a fost uploadat acum mai mult de ' + FILE_AGE + ' de  secunde');
 
-                        /** Schedule tasks to be run on the server. */
                         Conn.connect(Config, function (err) {
                             if (err) throw err;
                             var workbook = new Excel.Workbook();
@@ -51,7 +49,7 @@ Fs.readdir(FILE_PATH, function (err, files) {
                                         console.log(new Date().toLocaleString().replace(/T/, ' ').replace(/\..+/, '') + ' | Success');
                                     });
 
-                                    //Read Target Table Fields
+                                    /** read target table fields */
                                     var sql = 'SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N\'' + TABLE_NAME + '\' ORDER BY ORDINAL_POSITION';
                                     Conn.query(sql, function (err, result) {
                                         if (err) {
@@ -87,12 +85,12 @@ Fs.readdir(FILE_PATH, function (err, files) {
                                                 }
                                             }
 
-                                            // query to the database and get the records
+                                            /** query to the database and get the records */
                                             workbook.eachSheet((ws, sheetId) => {
                                                 var worksheet = workbook.getWorksheet(sheetId);
                                                 worksheet.eachRow({ includeEmpty: false }, function (row, rowNumber) {
                                                     if (rowNumber > 1) {
-                                                        
+
                                                         /** add extra columns here */
                                                         const rowWithExtra = row.values;
                                                         rowWithExtra.push(stats.ctime);
@@ -103,14 +101,14 @@ Fs.readdir(FILE_PATH, function (err, files) {
                                                         rowWithExtra.shift();
 
                                                         /** ignore row which have stock or price values NaN or less than 0 */
-
                                                         if (typeof (rowWithExtra[4]) === 'number' && typeof (rowWithExtra[3]) === 'number' && rowWithExtra[4] > 0 && rowWithExtra[3] > 0) {
                                                             table.rows.add.apply(table.rows, rowWithExtra);
                                                         }
                                                     }
                                                 });
                                             })
-                                            //Insert into Target Table
+                                            /** insert into target table */
+
                                             var req = new Conn.Request();
                                             Conn.connect(Config, function (err) {
                                                 if (err) {
@@ -122,6 +120,7 @@ Fs.readdir(FILE_PATH, function (err, files) {
                                                     } else {
                                                         console.log(new Date().toLocaleString().replace(/T/, ' ').replace(/\..+/, '') + ' | Data Loaded Successfully | ' + rowCount.rowsAffected + ' rows affected');
 
+                                                        /** move inserted file to processed folder */
                                                         const currentPath = Path.join(FILE_PATH, "", file);
                                                         const destinationPath = Path.join(FILE_PATH, "processed", file);
 
@@ -129,7 +128,7 @@ Fs.readdir(FILE_PATH, function (err, files) {
                                                             if (err) {
                                                                 throw err
                                                             } else {
-                                                                console.log("Successfully moved the file!");
+                                                                console.log(new Date().toLocaleString().replace(/T/, ' ').replace(/\..+/, '') + ' | Successfully moved the file ');
                                                             }
                                                         });
                                                     }
