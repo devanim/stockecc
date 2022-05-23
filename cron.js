@@ -85,7 +85,7 @@ Fs.readdir(FILE_PATH, function (err, files) {
                                                 }
                                             }
 
-                                            /** query to the database and get the records */
+                                            /** get the records from the excel file */
                                             workbook.eachSheet((ws, sheetId) => {
                                                 var worksheet = workbook.getWorksheet(sheetId);
                                                 worksheet.eachRow({ includeEmpty: false }, function (row, rowNumber) {
