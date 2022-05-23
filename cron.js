@@ -92,15 +92,17 @@ Fs.readdir(FILE_PATH, function (err, files) {
                                                 var worksheet = workbook.getWorksheet(sheetId);
                                                 worksheet.eachRow({ includeEmpty: false }, function (row, rowNumber) {
                                                     if (rowNumber > 1) {
+                                                        
                                                         /** add extra columns here */
                                                         const rowWithExtra = row.values;
-                                                        //console.log(typeof (rowWithExtra[0]) + ', ' + typeof (rowWithExtra[1]) + ', ' + typeof (rowWithExtra[2]) + ', ' + typeof (rowWithExtra[3]) + ', ' + typeof (rowWithExtra[4]) + ', ' + typeof (rowWithExtra[5]));
                                                         rowWithExtra.push(stats.ctime);
                                                         rowWithExtra.push(worksheet.name);
 
                                                         /** indexing in xlsx files starts from number 1 (eg. A1 point to row 1 and column 1) */
                                                         /** setting null at the start is much easier than always recalculating from 0 based to 1 based indexing */
                                                         rowWithExtra.shift();
+
+                                                        /** ignore row which have stock or price values NaN or less than 0 */
 
                                                         if (typeof (rowWithExtra[4]) === 'number' && typeof (rowWithExtra[3]) === 'number' && rowWithExtra[4] > 0 && rowWithExtra[3] > 0) {
                                                             table.rows.add.apply(table.rows, rowWithExtra);
