@@ -11,7 +11,7 @@ import Fs from 'fs';
 import Moment from 'moment';
 
 const FILE_EXTENSION = '.xlsx';
-const FILE_AGE = 30;
+const FILE_AGE = 1800;
 const FILE_PATH = '/home/euroestcar/public_html/new.euroestcar.ro/ftp_products_stock/';
 // const FILE_PATH = './';
 const TABLE_NAME = 'stockecc';
@@ -102,16 +102,9 @@ Fs.readdir(FILE_PATH, function (err, files) {
                                                         /** setting null at the start is much easier than always recalculating from 0 based to 1 based indexing */
                                                         rowWithExtra.shift();
 
-                                                        if (typeof (rowWithExtra[4]) !== 'number') {
-                                                            // console.log(typeof (rowWithExtra[4]));
-                                                            rowWithExtra[4] = 0;
+                                                        if (typeof (rowWithExtra[4]) === 'number' && typeof (rowWithExtra[3]) === 'number' && rowWithExtra[4] > 0 && rowWithExtra[3] > 0) {
+                                                            table.rows.add.apply(table.rows, rowWithExtra);
                                                         }
-                                                        if (typeof (rowWithExtra[3]) !== 'number') {
-                                                            // console.log(typeof (rowWithExtra[3]));
-                                                            rowWithExtra[3] = 0;
-                                                        }
-
-                                                        table.rows.add.apply(table.rows, rowWithExtra);
                                                     }
                                                 });
                                             })
