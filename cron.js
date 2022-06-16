@@ -12,6 +12,7 @@ import Moment from 'moment';
 
 const FILE_EXTENSION = '.xlsx';
 const FILE_AGE = 1800;
+// const FILE_AGE = 1;
 const FILE_PATH = '/home/euroestcar/public_html/new.euroestcar.ro/ftp_products_stock/';
 // const FILE_PATH = './';
 const TABLE_NAME = 'stockecc';
@@ -100,8 +101,17 @@ Fs.readdir(FILE_PATH, function (err, files) {
                                                         /** setting null at the start is much easier than always recalculating from 0 based to 1 based indexing */
                                                         rowWithExtra.shift();
 
+                                                        /** change input type so that the bulk upload does not fail when trying to identify the type of field to load */
+                                                        /** the reference number is sometimes a number and sometimes a string */
+
+                                                        rowWithExtra[0] = rowWithExtra[0].toString();
+                                                        rowWithExtra[1] = rowWithExtra[1].toString();
+                                                        rowWithExtra[2] = rowWithExtra[2].toString();
+
+
                                                         /** ignore row which have stock or price values NaN or less than 0 */
                                                         if (typeof (rowWithExtra[4]) === 'number' && typeof (rowWithExtra[3]) === 'number' && rowWithExtra[4] > 0 && rowWithExtra[3] > 0) {
+
                                                             table.rows.add.apply(table.rows, rowWithExtra);
                                                         }
                                                     }
@@ -117,6 +127,7 @@ Fs.readdir(FILE_PATH, function (err, files) {
                                                 req.bulk(table, function (err, rowCount) {
                                                     if (err) {
                                                         console.log(err);
+                                                        throw err;
                                                     } else {
                                                         console.log(new Date().toLocaleString().replace(/T/, ' ').replace(/\..+/, '') + ' | Data Loaded Successfully | ' + rowCount.rowsAffected + ' rows affected');
 
